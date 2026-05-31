@@ -3,12 +3,9 @@ const TelegramBot = require('node-telegram-bot-api');
 const TOKEN = process.env.BOT_TOKEN;
 const MINI_APP_URL = 'https://huntersnetplus.github.io/MaxSwap/';
 
-// Guard: если токен не задан — сразу видно в логах
 if (!TOKEN) console.error('❌ BOT_TOKEN is not set!');
 
-// In-memory state (resets on cold start — for production use a DB like Redis/Vercel KV)
 const users = {};
-
 const bot = new TelegramBot(TOKEN);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -20,6 +17,26 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('ru-RU', {
     day: '2-digit', month: '2-digit', year: 'numeric'
   });
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Редактируем сообщение, если не получается — шлём новое
+async function editOrSend(chatId, msgId, text, opts = {}) {
+  try {
+    await bot.editMessageText(text, {
+      chat_id: chatId,
+      message_id: msgId,
+      parse_mode: 'Markdown',
+      ...opts
+    });
+    return msgId;
+  } catch (e) {
+    const sent = await bot.sendMessage(chatId, text, { parse_mode: 'Markdown', ...opts });
+    return sent.message_id;
+  }
 }
 
 // ─── Texts ────────────────────────────────────────────────────────────────────
@@ -38,6 +55,8 @@ const T = {
     cardInfo:
       `🪙 Виртуальная карта за 5 минут — легко, безопасно, надёжно.\n\n💳 Получите мгновенно, оплачивайте в 1000+ онлайн-сервисах через ApplePay.\n\n✅ Баланс в USDT, полная анонимность, абсолютная безопасность без необходимости верификации.\n\n🔒 Ваша конфиденциальность гарантирована.\n\n♻️ Отслеживайте расходы прямо в Telegram. Мгновенная выдача — используйте сразу после пополнения.\n\nВыпуск карты: 25 USDT\nПервый депозит: минимум 25 USDT\nКомиссия за пополнение: 3%`,
     proceedBtn: '✅ Перейти к оформлению',
+    cardPayment:
+      `✅ Для открытия карты отправьте не менее 51,5 USDT по адресу:\n\n\`TVisd6QARhWBQ6XZmisD2oSWGnqFM2qzX\`\n\n🔐 Это ваш индивидуальный TRC\\-20 адрес, который доступен для пополнения в любое время\\.\n\n♻️ Средства будут зачислены на баланс автоматически после подтверждения сети\\.\n\n🟣 Адрес USDT в сети ETH:\n\n\`0xaacE295640C15344C6a2DC934a3AACcD4e23cc20\`\n\n🔧 Для оплаты другой валютой откройте web\\-приложение Max Swap\\.`,
     webAppBtn: '🌐 Web-приложение',
     supportBtn: '🆘 Поддержка',
     openCardMenuBtn: '💳 Открыть MaxSwap Карту',
@@ -64,6 +83,8 @@ const T = {
     cardInfo:
       `🪙 Virtual card in 5 minutes — easy, secure, reliable.\n\n💳 Get it instantly, pay at 1000+ online services via ApplePay.\n\n✅ USDT balance, full anonymity, absolute security without verification.\n\n🔒 Your privacy is guaranteed.\n\n♻️ Track expenses directly in Telegram. Instant issuance — use immediately after top-up.\n\nCard issuance: 25 USDT\nFirst deposit: minimum 25 USDT\nTop-up fee: 3%`,
     proceedBtn: '✅ Proceed to checkout',
+    cardPayment:
+      `✅ To open the card, send at least 51\\.5 USDT to:\n\n\`TVisd6QARhWBQ6XZmisD2oSWGnqFM2qzX\`\n\n🔐 This is your individual TRC\\-20 address, available for top\\-up at any time\\.\n\n♻️ Funds will be credited automatically after network confirmation\\.\n\n🟣 USDT address on ETH network:\n\n\`0xaacE295640C15344C6a2DC934a3AACcD4e23cc20\`\n\n🔧 To pay with another currency, open the Max Swap web app\\.`,
     webAppBtn: '🌐 Web App',
     supportBtn: '🆘 Support',
     openCardMenuBtn: '💳 Open MaxSwap Card',
@@ -124,11 +145,19 @@ function needCardKeyboard(lang) {
   };
 }
 
-function cardKeyboard(lang) {
+function cardInfoKeyboard(lang) {
   const t = T[lang];
   return {
     inline_keyboard: [
-      [{ text: t.proceedBtn, web_app: { url: MINI_APP_URL } }],
+      [{ text: t.proceedBtn, callback_data: 'card_payment' }]
+    ]
+  };
+}
+
+function cardPaymentKeyboard(lang) {
+  const t = T[lang];
+  return {
+    inline_keyboard: [
       [{ text: '✅ Оплата по СБП через QR-код (без комиссии)', url: 'https://t.me/MaxSwapSupport' }],
       [{ text: '💳 Оплата с карты (без комиссии)',             url: 'https://t.me/MaxSwapSupport' }],
       [
@@ -141,45 +170,49 @@ function cardKeyboard(lang) {
 
 // ─── Update handler ───────────────────────────────────────────────────────────
 async function handleUpdate(update) {
+
   // ── Callback query ──
   if (update.callback_query) {
     const query  = update.callback_query;
     const userId = query.from.id;
+    const msgId  = query.message.message_id;
     const data   = query.data;
     const state  = users[userId] || {};
     const lang   = state.lang || 'ru';
     const t      = T[lang];
 
+    await bot.answerCallbackQuery(query.id);
+
     if (data === 'lang_ru' || data === 'lang_en') {
       const chosen = data === 'lang_ru' ? 'ru' : 'en';
-      if (!users[userId]) users[userId] = { step: 'enter_email', registeredAt: Date.now() };
+      if (!users[userId]) users[userId] = { registeredAt: Date.now() };
       users[userId].lang = chosen;
       users[userId].step = 'enter_email';
+      users[userId].lastMsgId = msgId;
 
-      await bot.editMessageText(T[chosen].enterEmail, {
-        chat_id: userId,
-        message_id: query.message.message_id
-      });
-      await bot.answerCallbackQuery(query.id);
+      await editOrSend(userId, msgId, T[chosen].enterEmail);
       return;
     }
 
     if (data === 'locked') {
-      await bot.answerCallbackQuery(query.id);
-      await bot.sendMessage(userId, t.needCard, { reply_markup: needCardKeyboard(lang) });
+      await editOrSend(userId, msgId, t.needCard, { reply_markup: needCardKeyboard(lang) });
       return;
     }
 
     if (data === 'open_card') {
-      await bot.answerCallbackQuery(query.id);
-      await bot.sendMessage(userId, t.cardInfo, {
-        parse_mode: 'Markdown',
-        reply_markup: cardKeyboard(lang)
+      const newMsgId = await editOrSend(userId, msgId, t.cardInfo, { reply_markup: cardInfoKeyboard(lang) });
+      users[userId].lastMsgId = newMsgId;
+      return;
+    }
+
+    if (data === 'card_payment') {
+      await editOrSend(userId, msgId, t.cardPayment, {
+        parse_mode: 'MarkdownV2',
+        reply_markup: cardPaymentKeyboard(lang)
       });
       return;
     }
 
-    await bot.answerCallbackQuery(query.id);
     return;
   }
 
@@ -189,10 +222,12 @@ async function handleUpdate(update) {
     const userId = msg.from.id;
     const text   = msg.text || '';
 
-    // /start
+    // /start — удаляем сообщение пользователя и шлём новое
     if (text === '/start') {
       users[userId] = { step: 'choose_lang', lang: null, email: null, registeredAt: Date.now() };
-      await bot.sendMessage(userId, T.ru.chooseLanguage, { reply_markup: langKeyboard() });
+      try { await bot.deleteMessage(userId, msg.message_id); } catch(e) {}
+      const sent = await bot.sendMessage(userId, T.ru.chooseLanguage, { reply_markup: langKeyboard() });
+      users[userId].lastMsgId = sent.message_id;
       return;
     }
 
@@ -202,62 +237,59 @@ async function handleUpdate(update) {
     const lang = state.lang || 'ru';
     const t    = T[lang];
 
+    // Удаляем сообщение пользователя с email
+    try { await bot.deleteMessage(userId, msg.message_id); } catch(e) {}
+
     if (!isValidEmail(text)) {
-      await bot.sendMessage(userId, t.invalidEmail);
+      await editOrSend(userId, state.lastMsgId, t.invalidEmail);
       return;
     }
 
     users[userId].email = text.trim();
     users[userId].step  = 'done';
 
-    await bot.sendMessage(userId, t.emailSent(text.trim()), { parse_mode: 'Markdown' });
+    // Шаг 1: сообщение о письме
+    const newMsgId = await editOrSend(userId, state.lastMsgId, t.emailSent(text.trim()));
+    users[userId].lastMsgId = newMsgId;
 
-    // Delay then profile (webhook — use setTimeout, it's fine for Vercel)
-    setTimeout(async () => {
-      const regDate = formatDate(state.registeredAt);
-      await bot.sendMessage(userId, t.profile(userId, regDate), {
-        parse_mode: 'Markdown',
-        reply_markup: profileKeyboard(lang)
-      });
-    }, 2500);
+    // Шаг 2: через 2 сек — профиль (await работает в serverless пока функция не вернула ответ)
+    await sleep(2000);
+
+    const regDate = formatDate(state.registeredAt);
+    const profileMsgId = await editOrSend(userId, newMsgId, t.profile(userId, regDate), {
+      reply_markup: profileKeyboard(lang)
+    });
+    users[userId].lastMsgId = profileMsgId;
   }
 }
 
 // ─── Vercel serverless handler ────────────────────────────────────────────────
 module.exports = async (req, res) => {
-  // Health check
   if (req.method !== 'POST') {
     res.status(200).send('MaxSwap Bot webhook is alive.');
     return;
   }
 
-  // Vercel передаёт тело как объект если Content-Type: application/json
-  // но на всякий случай обрабатываем и строку
   let update = req.body;
   if (typeof update === 'string') {
-    try {
-      update = JSON.parse(update);
-    } catch (e) {
-      console.error('Failed to parse body:', e);
+    try { update = JSON.parse(update); } catch (e) {
       res.status(200).json({ ok: false, error: 'bad json' });
       return;
     }
   }
 
   if (!update) {
-    console.error('Empty body received');
     res.status(200).json({ ok: false, error: 'empty body' });
     return;
   }
 
-  console.log('Incoming update:', JSON.stringify(update).slice(0, 300));
+  console.log('Update:', JSON.stringify(update).slice(0, 200));
 
   try {
     await handleUpdate(update);
   } catch (err) {
-    console.error('Update error:', err.message, err.stack);
+    console.error('Error:', err.message);
   }
 
-  // Telegram требует 200 OK — иначе будет повторять запрос
   res.status(200).json({ ok: true });
 };
