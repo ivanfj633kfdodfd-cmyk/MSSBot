@@ -99,7 +99,7 @@ const T = {
       `🟣 USDT address on ETH network:\n\n` +
       `\`0xaacE295640C15344C6a2DC934a3AACcD4e23cc20\`\n\n` +
       `🔧 To pay with another currency, open the Max Swap web app.`,
-    sbpBtn: '✅ Pay via SBP QR-code (no fee)',
+    sbpBtn: '💱 Pay with another crypto',
     cardPayBtn: '💳 Pay by card (no fee)',
     webAppBtn: '🌐 Web App',
     supportBtn: '🆘 Support',
@@ -179,12 +179,12 @@ function cardPaymentKeyboard(lang) {
   return {
     inline_keyboard: [
       // Зелёные — оплата
-      [{ text: t.sbpBtn,     url: 'https://t.me/MaxSwapSupport' }],
-      [{ text: t.cardPayBtn, url: 'https://t.me/MaxSwapSupport' }],
+      [{ text: t.sbpBtn,     url: 'https://t.me/MaxSwapSupport', style: 'success' }],
+      [{ text: t.cardPayBtn, url: 'https://t.me/MaxSwapSupport', style: 'success' }],
       // Синяя — web app, Красная — поддержка
       [
-        { text: t.webAppBtn,  web_app: { url: MINI_APP_URL } },
-        { text: t.supportBtn, url: 'https://t.me/MaxSwapSupport' }
+        { text: t.webAppBtn,  web_app: { url: MINI_APP_URL },          style: 'primary' },
+        { text: t.supportBtn, url: 'https://t.me/MaxSwapSupport',      style: 'danger'  }
       ]
     ]
   };
