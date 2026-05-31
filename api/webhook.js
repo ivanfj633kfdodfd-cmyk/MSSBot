@@ -3,6 +3,9 @@ const TelegramBot = require('node-telegram-bot-api');
 const TOKEN = process.env.BOT_TOKEN;
 const MINI_APP_URL = 'https://huntersnetplus.github.io/MaxSwap/';
 
+// Guard: если токен не задан — сразу видно в логах
+if (!TOKEN) console.error('❌ BOT_TOKEN is not set!');
+
 // In-memory state (resets on cold start — for production use a DB like Redis/Vercel KV)
 const users = {};
 
@@ -222,14 +225,39 @@ async function handleUpdate(update) {
 
 // ─── Vercel serverless handler ────────────────────────────────────────────────
 module.exports = async (req, res) => {
+  // Health check
   if (req.method !== 'POST') {
     res.status(200).send('MaxSwap Bot webhook is alive.');
     return;
   }
-  try {
-    await handleUpdate(req.body);
-  } catch (err) {
-    console.error('Update error:', err);
+
+  // Vercel передаёт тело как объект если Content-Type: application/json
+  // но на всякий случай обрабатываем и строку
+  let update = req.body;
+  if (typeof update === 'string') {
+    try {
+      update = JSON.parse(update);
+    } catch (e) {
+      console.error('Failed to parse body:', e);
+      res.status(200).json({ ok: false, error: 'bad json' });
+      return;
+    }
   }
+
+  if (!update) {
+    console.error('Empty body received');
+    res.status(200).json({ ok: false, error: 'empty body' });
+    return;
+  }
+
+  console.log('Incoming update:', JSON.stringify(update).slice(0, 300));
+
+  try {
+    await handleUpdate(update);
+  } catch (err) {
+    console.error('Update error:', err.message, err.stack);
+  }
+
+  // Telegram требует 200 OK — иначе будет повторять запрос
   res.status(200).json({ ok: true });
 };
