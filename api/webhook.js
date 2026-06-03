@@ -57,7 +57,7 @@ const T = {
     proceedBtn: '✅ Перейти к оформлению',
     cardPaymentCaption:
       `✅ Для открытия карты отправьте не менее 51,5 USDT по адресу:\n\n` +
-      `\`TVisd6QARhWBQ6XZmisD2oSWGnqFM2qzX\`\n\n` +
+      `\`TVis1d6QARhWBQ6XZmisD2oSWGnqFM2qzX\`\n\n` +
       `🔐 Это ваш индивидуальный TRC-20 адрес, который доступен для пополнения в любое время.\n\n` +
       `♻️ Средства будут зачислены на баланс автоматически после подтверждения сети.\n\n` +
       `🟣 Адрес USDT в сети ETH:\n\n` +
@@ -93,7 +93,7 @@ const T = {
     proceedBtn: '✅ Proceed to checkout',
     cardPaymentCaption:
       `✅ To open the card, send at least 51.5 USDT to:\n\n` +
-      `\`TVisd6QARhWBQ6XZmisD2oSWGnqFM2qzX\`\n\n` +
+      `\`TVis1d6QARhWBQ6XZmisD2oSWGnqFM2qzX\`\n\n` +
       `🔐 This is your individual TRC-20 address, available for top-up at any time.\n\n` +
       `♻️ Funds will be credited automatically after network confirmation.\n\n` +
       `🟣 USDT address on ETH network:\n\n` +
