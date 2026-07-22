@@ -49,7 +49,10 @@ const T = {
     emailSent: (email) =>
       `📨 На адрес электронной почты *${email}* отправлено письмо для подтверждения.\n\nВы можете подтвердить почту в любой удобный момент — тогда она станет дополнительным каналом связи.\n\nЕсли вы не получили письмо и/или истёк срок действия ссылки — проверьте папку «Спам».`,
     profile: (id, date) =>
-      `👤 *Профиль*\n\n🆔 ID аккаунта: \`${id}\`\n📅 Дата создания: ${date}\n\n💼 *Доступные балансы:*\nUSDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0\nXLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0`,
+      `<b>👤 Профиль</b>\n\n` +
+      `<pre>🆔 ID аккаунта   ${String(id).padEnd(16)}\n📅 Дата создания  ${date}</pre>\n\n` +
+      `💼 <b>Доступные балансы:</b>\n` +
+      `<blockquote>USDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0\n<tg-spoiler>XLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0</tg-spoiler></blockquote>`,
     needCard: '🔒 Для доступа к этому разделу нужно открыть Max Swap Карту.',
     openCardBtn: '💳 Открыть в приложении',
     openTgBtn: '📲 Открыть в Telegram',
@@ -99,7 +102,10 @@ const T = {
     emailSent: (email) =>
       `📨 A confirmation email has been sent to *${email}*.\n\nYou can confirm your email at any convenient time — it will then become an additional communication channel.\n\nIf you did not receive the confirmation email and/or the link has expired — please check your Spam folder.`,
     profile: (id, date) =>
-      `👤 *Profile*\n\n🆔 Account ID: \`${id}\`\n📅 Created: ${date}\n\n💼 *Available balances:*\nUSDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0\nXLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0`,
+      `<b>👤 Profile</b>\n\n` +
+      `<pre>🆔 Account ID     ${String(id).padEnd(16)}\n📅 Created        ${date}</pre>\n\n` +
+      `💼 <b>Available balances:</b>\n` +
+      `<blockquote>USDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0\n<tg-spoiler>XLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0</tg-spoiler></blockquote>`,
     needCard: '🔒 To access this section you need to open a Max Swap Card.',
     openCardBtn: '💳 Open in App',
     openTgBtn: '📲 Open in Telegram',
@@ -325,7 +331,7 @@ async function handleUpdate(update) {
         const lang = existing.lang || 'ru';
         const t = T[lang];
         const sent = await bot.sendMessage(userId, t.profile(userId, regDate), {
-          parse_mode: 'Markdown',
+          parse_mode: 'HTML',
           reply_markup: profileKeyboard(lang)
         });
         users[userId].lastMsgId = sent.message_id;
@@ -366,6 +372,7 @@ async function handleUpdate(update) {
 
     const regDate = formatDate(state.registeredAt);
     const profileMsgId = await editOrSend(userId, emailMsgId, t.profile(userId, regDate), {
+      parse_mode: 'HTML',
       reply_markup: profileKeyboard(lang)
     });
     users[userId].lastMsgId = profileMsgId;
