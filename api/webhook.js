@@ -36,18 +36,12 @@ async function editOrSend(chatId, msgId, text, opts = {}) {
 const T = {
   ru: {
     profile: (id, date) =>
-      `<h2>👤 Профиль</h2>` +
-      `<hr/>` +
-      `<table bordered>` +
-        `<tr><th>🆔 ID аккаунта</th><th>📅 Дата создания</th></tr>` +
-        `<tr><td><code>${id}</code></td><td>${date}</td></tr>` +
-      `</table>` +
-      `<hr/>` +
-      `<p>💼 <b>Доступные балансы:</b></p>` +
-      `<blockquote>USDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0</blockquote>` +
-      `<details><summary>Показать другие валюты</summary>` +
-      `<blockquote>XLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0</blockquote>` +
-      `</details>`,
+      `<b>👤 Профиль</b>\n\n` +
+      `🆔 ID аккаунта: <code>${id}</code>\n` +
+      `📅 Дата создания: ${date}\n\n` +
+      `💼 <b>Доступные балансы:</b>\n` +
+      `<blockquote>USDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0</blockquote>\n` +
+      `<blockquote expandable>XLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0</blockquote>`,
     needCard: '🔒 Для доступа к этому разделу нужно открыть Max Swap Карту.',
     openCardBtn: '💳 Открыть в приложении',
     openTgBtn: '📲 Открыть в Telegram',
@@ -92,18 +86,12 @@ const T = {
   },
   en: {
     profile: (id, date) =>
-      `<h2>👤 Profile</h2>` +
-      `<hr/>` +
-      `<table bordered>` +
-        `<tr><th>🆔 Account ID</th><th>📅 Created</th></tr>` +
-        `<tr><td><code>${id}</code></td><td>${date}</td></tr>` +
-      `</table>` +
-      `<hr/>` +
-      `<p>💼 <b>Available balances:</b></p>` +
-      `<blockquote>USDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0</blockquote>` +
-      `<details><summary>Show more currencies</summary>` +
-      `<blockquote>XLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0</blockquote>` +
-      `</details>`,
+      `<b>👤 Profile</b>\n\n` +
+      `🆔 Account ID: <code>${id}</code>\n` +
+      `📅 Created: ${date}\n\n` +
+      `💼 <b>Available balances:</b>\n` +
+      `<blockquote>USDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0</blockquote>\n` +
+      `<blockquote expandable>XLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0</blockquote>`,
     needCard: '🔒 To access this section you need to open a Max Swap Card.',
     openCardBtn: '💳 Open in App',
     openTgBtn: '📲 Open in Telegram',
@@ -303,8 +291,8 @@ async function handleUpdate(update) {
       if (!users[userId]) users[userId] = { registeredAt: Date.now() };
       const lang = users[userId].lang || 'ru';
       const regDate = formatDate(users[userId].registeredAt);
-      const sent = await bot.sendRichMessage(userId, {
-        rich_message: { html: T[lang].profile(userId, regDate) },
+      const sent = await bot.sendMessage(userId, T[lang].profile(userId, regDate), {
+        parse_mode: 'HTML',
         reply_markup: profileKeyboard(lang)
       });
       users[userId].lastMsgId = sent.message_id;
