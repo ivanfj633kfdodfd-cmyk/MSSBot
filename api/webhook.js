@@ -10,10 +10,6 @@ const users = {};
 const bot = new TelegramBot(TOKEN);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-}
-
 function formatDate(date) {
   return new Date(date).toLocaleDateString('ru-RU', {
     day: '2-digit', month: '2-digit', year: 'numeric'
@@ -44,10 +40,6 @@ async function editOrSend(chatId, msgId, text, opts = {}) {
 const T = {
   ru: {
     chooseLanguage: '🌐 Выберите язык интерфейса:',
-    enterEmail: '📧 Введите ваш адрес электронной почты:',
-    invalidEmail: '❌ Некорректный адрес электронной почты. Пожалуйста, введите действительный e-mail:',
-    emailSent: (email) =>
-      `📨 На адрес электронной почты *${email}* отправлено письмо для подтверждения.\n\nВы можете подтвердить почту в любой удобный момент — тогда она станет дополнительным каналом связи.\n\nЕсли вы не получили письмо и/или истёк срок действия ссылки — проверьте папку «Спам».`,
     profile: (id, date) =>
       `<h2>👤 Профиль</h2>` +
       `<hr/>` +
@@ -105,10 +97,6 @@ const T = {
   },
   en: {
     chooseLanguage: '🌐 Choose your interface language:',
-    enterEmail: '📧 Enter your email address:',
-    invalidEmail: '❌ Invalid email address. Please enter a valid e-mail:',
-    emailSent: (email) =>
-      `📨 A confirmation email has been sent to *${email}*.\n\nYou can confirm your email at any convenient time — it will then become an additional communication channel.\n\nIf you did not receive the confirmation email and/or the link has expired — please check your Spam folder.`,
     profile: (id, date) =>
       `<h2>👤 Profile</h2>` +
       `<hr/>` +
@@ -285,9 +273,16 @@ async function handleUpdate(update) {
       const chosen = data === 'lang_ru' ? 'ru' : 'en';
       if (!users[userId]) users[userId] = { registeredAt: Date.now() };
       users[userId].lang = chosen;
-      users[userId].step = 'enter_email';
-      users[userId].lastMsgId = msgId;
-      await editOrSend(userId, msgId, T[chosen].enterEmail);
+      users[userId].step = 'done';
+
+      const regDate = formatDate(users[userId].registeredAt);
+      const tChosen = T[chosen];
+      try { await bot.deleteMessage(userId, msgId); } catch(e) {}
+      const sent = await bot.sendRichMessage(userId, {
+        rich_message: { html: tChosen.profile(userId, regDate) },
+        reply_markup: profileKeyboard(chosen)
+      });
+      users[userId].lastMsgId = sent.message_id;
       return;
     }
 
@@ -339,7 +334,6 @@ async function handleUpdate(update) {
     const text   = msg.text || '';
 
     if (text === '/start') {
-      // Если пользователь уже прошёл онбординг — сразу показываем профиль
       const existing = users[userId];
       if (existing && existing.step === 'done') {
         try { await bot.deleteMessage(userId, msg.message_id); } catch(e) {}
@@ -354,47 +348,13 @@ async function handleUpdate(update) {
         return;
       }
 
-      // Новый пользователь — начинаем онбординг
-      users[userId] = { step: 'choose_lang', lang: null, email: null, registeredAt: Date.now() };
+      // Новый пользователь — выбор языка
+      users[userId] = { step: 'choose_lang', lang: null, registeredAt: Date.now() };
       try { await bot.deleteMessage(userId, msg.message_id); } catch(e) {}
       const sent = await bot.sendMessage(userId, T.ru.chooseLanguage, { reply_markup: langKeyboard() });
       users[userId].lastMsgId = sent.message_id;
       return;
     }
-
-    const state = users[userId];
-    if (!state || state.step !== 'enter_email') return;
-
-    const lang = state.lang || 'ru';
-    const t    = T[lang];
-
-    // Удаляем сообщение пользователя
-    try { await bot.deleteMessage(userId, msg.message_id); } catch(e) {}
-
-    if (!isValidEmail(text)) {
-      await editOrSend(userId, state.lastMsgId, t.invalidEmail);
-      return;
-    }
-
-    users[userId].email = text.trim();
-    users[userId].step  = 'done';
-
-    // Шаг 1: сообщение о письме
-    const emailMsgId = await editOrSend(userId, state.lastMsgId, t.emailSent(text.trim()));
-    users[userId].lastMsgId = emailMsgId;
-
-    // Шаг 2: через 2 сек — профиль
-    await sleep(2000);
-
-    const regDate = formatDate(state.registeredAt);
-    const profileMsgId = await (async () => {
-      const sent = await bot.sendRichMessage(userId, {
-        rich_message: { html: t.profile(userId, regDate) },
-        reply_markup: profileKeyboard(lang)
-      });
-      return sent.message_id;
-    })();
-    users[userId].lastMsgId = profileMsgId;
   }
 }
 
