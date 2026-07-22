@@ -49,10 +49,18 @@ const T = {
     emailSent: (email) =>
       `📨 На адрес электронной почты *${email}* отправлено письмо для подтверждения.\n\nВы можете подтвердить почту в любой удобный момент — тогда она станет дополнительным каналом связи.\n\nЕсли вы не получили письмо и/или истёк срок действия ссылки — проверьте папку «Спам».`,
     profile: (id, date) =>
-      `<b>👤 Профиль</b>\n\n` +
-      `<pre>🆔 ID аккаунта   ${String(id).padEnd(16)}\n📅 Дата создания  ${date}</pre>\n\n` +
-      `💼 <b>Доступные балансы:</b>\n` +
-      `<blockquote>USDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0\n<tg-spoiler>XLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0</tg-spoiler></blockquote>`,
+      `<h2>👤 Профиль</h2>` +
+      `<hr/>` +
+      `<table bordered>` +
+        `<tr><th>🆔 ID аккаунта</th><th>📅 Дата создания</th></tr>` +
+        `<tr><td><code>${id}</code></td><td>${date}</td></tr>` +
+      `</table>` +
+      `<hr/>` +
+      `<p>💼 <b>Доступные балансы:</b></p>` +
+      `<blockquote>USDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0</blockquote>` +
+      `<details><summary>Показать другие валюты</summary>` +
+      `<blockquote>XLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0</blockquote>` +
+      `</details>`,
     needCard: '🔒 Для доступа к этому разделу нужно открыть Max Swap Карту.',
     openCardBtn: '💳 Открыть в приложении',
     openTgBtn: '📲 Открыть в Telegram',
@@ -102,10 +110,18 @@ const T = {
     emailSent: (email) =>
       `📨 A confirmation email has been sent to *${email}*.\n\nYou can confirm your email at any convenient time — it will then become an additional communication channel.\n\nIf you did not receive the confirmation email and/or the link has expired — please check your Spam folder.`,
     profile: (id, date) =>
-      `<b>👤 Profile</b>\n\n` +
-      `<pre>🆔 Account ID     ${String(id).padEnd(16)}\n📅 Created        ${date}</pre>\n\n` +
-      `💼 <b>Available balances:</b>\n` +
-      `<blockquote>USDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0\n<tg-spoiler>XLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0</tg-spoiler></blockquote>`,
+      `<h2>👤 Profile</h2>` +
+      `<hr/>` +
+      `<table bordered>` +
+        `<tr><th>🆔 Account ID</th><th>📅 Created</th></tr>` +
+        `<tr><td><code>${id}</code></td><td>${date}</td></tr>` +
+      `</table>` +
+      `<hr/>` +
+      `<p>💼 <b>Available balances:</b></p>` +
+      `<blockquote>USDT: 0.00\nUSDC: 0.00\nBTC: 0.0\nETH: 0.0\nXRP: 0.0\nLTC: 0.0\nTRX: 0.0</blockquote>` +
+      `<details><summary>Show more currencies</summary>` +
+      `<blockquote>XLM: 0.0\nBNB: 0.0\nBCH: 0.0\nHBAR: 0.0\nDOT: 0.0\nAVAX: 0.0\nALGO: 0.0\nDOGE: 0.0\nPOL: 0.0\nTRUMP: 0.0\nNEAR: 0.0\nTON: 0.0\nADA: 0.0\nSOL: 0.0</blockquote>` +
+      `</details>`,
     needCard: '🔒 To access this section you need to open a Max Swap Card.',
     openCardBtn: '💳 Open in App',
     openTgBtn: '📲 Open in Telegram',
@@ -330,8 +346,8 @@ async function handleUpdate(update) {
         const regDate = formatDate(existing.registeredAt);
         const lang = existing.lang || 'ru';
         const t = T[lang];
-        const sent = await bot.sendMessage(userId, t.profile(userId, regDate), {
-          parse_mode: 'HTML',
+        const sent = await bot.sendRichMessage(userId, {
+          rich_message: { html: t.profile(userId, regDate) },
           reply_markup: profileKeyboard(lang)
         });
         users[userId].lastMsgId = sent.message_id;
@@ -371,10 +387,13 @@ async function handleUpdate(update) {
     await sleep(2000);
 
     const regDate = formatDate(state.registeredAt);
-    const profileMsgId = await editOrSend(userId, emailMsgId, t.profile(userId, regDate), {
-      parse_mode: 'HTML',
-      reply_markup: profileKeyboard(lang)
-    });
+    const profileMsgId = await (async () => {
+      const sent = await bot.sendRichMessage(userId, {
+        rich_message: { html: t.profile(userId, regDate) },
+        reply_markup: profileKeyboard(lang)
+      });
+      return sent.message_id;
+    })();
     users[userId].lastMsgId = profileMsgId;
   }
 }
