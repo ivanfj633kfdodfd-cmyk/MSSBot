@@ -25,16 +25,17 @@ function sleep(ms) {
 }
 
 async function editOrSend(chatId, msgId, text, opts = {}) {
+  const parseMode = opts.parse_mode || 'Markdown';
   try {
     await bot.editMessageText(text, {
       chat_id: chatId,
       message_id: msgId,
-      parse_mode: 'Markdown',
+      parse_mode: parseMode,
       ...opts
     });
     return msgId;
   } catch (e) {
-    const sent = await bot.sendMessage(chatId, text, { parse_mode: 'Markdown', ...opts });
+    const sent = await bot.sendMessage(chatId, text, { parse_mode: parseMode, ...opts });
     return sent.message_id;
   }
 }
@@ -56,17 +57,16 @@ const T = {
       `🪙 Виртуальная карта за 5 минут — легко, безопасно, надёжно.\n\n💳 Получите мгновенно, оплачивайте в 1000+ онлайн-сервисах через ApplePay.\n\n✅ Баланс в USDT, полная анонимность, абсолютная безопасность без необходимости верификации.\n\n🔒 Ваша конфиденциальность гарантирована.\n\n♻️ Отслеживайте расходы прямо в Telegram. Мгновенная выдача — используйте сразу после пополнения.\n\nВыпуск карты: 25 USDT\nПервый депозит: минимум 25 USDT\nКомиссия за пополнение: 3%`,
     proceedBtn: '✅ Перейти к оформлению',
     chooseCardText:
-      `💳 *Выберите тип карты:*\n\n` +
-      `\`\`\`\n` +
-      `Карта              Цена      \n` +
-      `─────────────────────────────\n` +
-      `💻 Online Card     52.5 USDT \n` +
-      `📱 NFC Card        52.5 USDT \n` +
-      `⭐ Ultima          99   USDT \n` +
-      `\`\`\`\n\n` +
-      `*💻 Online Card* — интернет, подписки, Netflix, ChatGPT, Spotify\n\n` +
-      `*📱 NFC Card* — Google Pay, Apple Pay, NFC-терминалы\n\n` +
-      `*⭐ Ultima* — онлайн + NFC, подходит для любых целей`,
+      `💳 <b>Выберите тип карты:</b>\n\n` +
+      `💻 <b>MaxSwap Online Card</b> — <b>52.5 USDT</b>\n` +
+      `Покупки в интернете, подписки, оплата сервисов\n` +
+      `<i>Netflix · ChatGPT · Spotify · и другие</i>\n\n` +
+      `📱 <b>MaxSwap NFC Card</b> — <b>52.5 USDT</b>\n` +
+      `Привязка к Google Pay и Apple Pay\n` +
+      `<i>Оплата через NFC-терминалы</i>\n\n` +
+      `⭐ <b>MaxSwap Ultima</b> — <b>99 USDT</b>\n` +
+      `Онлайн + NFC в одной карте\n` +
+      `<i>Подходит для любых целей</i>`,
     cardOnlineBtn: '💻 MaxSwap Online Card — 52.5 USDT',
     cardNfcBtn:    '📱 MaxSwap NFC Card — 52.5 USDT',
     cardUltimaBtn: '⭐ MaxSwap Ultima — 99 USDT',
@@ -107,17 +107,16 @@ const T = {
       `🪙 Virtual card in 5 minutes — easy, secure, reliable.\n\n💳 Get it instantly, pay at 1000+ online services via ApplePay.\n\n✅ USDT balance, full anonymity, absolute security without verification.\n\n🔒 Your privacy is guaranteed.\n\n♻️ Track expenses directly in Telegram. Instant issuance — use immediately after top-up.\n\nCard issuance: 25 USDT\nFirst deposit: minimum 25 USDT\nTop-up fee: 3%`,
     proceedBtn: '✅ Proceed to checkout',
     chooseCardText:
-      `💳 *Choose your card type:*\n\n` +
-      `\`\`\`\n` +
-      `Card               Price     \n` +
-      `─────────────────────────────\n` +
-      `💻 Online Card     52.5 USDT \n` +
-      `📱 NFC Card        52.5 USDT \n` +
-      `⭐ Ultima          99   USDT \n` +
-      `\`\`\`\n\n` +
-      `*💻 Online Card* — online shopping, subscriptions, Netflix, ChatGPT, Spotify\n\n` +
-      `*📱 NFC Card* — Google Pay, Apple Pay, NFC terminals\n\n` +
-      `*⭐ Ultima* — online + NFC, suitable for any purpose`,
+      `💳 <b>Choose your card type:</b>\n\n` +
+      `💻 <b>MaxSwap Online Card</b> — <b>52.5 USDT</b>\n` +
+      `Online shopping, subscriptions, digital services\n` +
+      `<i>Netflix · ChatGPT · Spotify · and more</i>\n\n` +
+      `📱 <b>MaxSwap NFC Card</b> — <b>52.5 USDT</b>\n` +
+      `Link to Google Pay and Apple Pay\n` +
+      `<i>Pay via NFC terminals</i>\n\n` +
+      `⭐ <b>MaxSwap Ultima</b> — <b>99 USDT</b>\n` +
+      `Online + NFC in one card\n` +
+      `<i>Suitable for any purpose</i>`,
     cardOnlineBtn: '💻 MaxSwap Online Card — 52.5 USDT',
     cardNfcBtn:    '📱 MaxSwap NFC Card — 52.5 USDT',
     cardUltimaBtn: '⭐ MaxSwap Ultima — 99 USDT',
@@ -290,6 +289,7 @@ async function handleUpdate(update) {
 
     if (data === 'choose_card') {
       const newId = await editOrSend(userId, msgId, t.chooseCardText, {
+        parse_mode: 'HTML',
         reply_markup: chooseCardKeyboard(lang)
       });
       if (users[userId]) users[userId].lastMsgId = newId;
