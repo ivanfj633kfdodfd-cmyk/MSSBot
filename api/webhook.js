@@ -57,17 +57,21 @@ const T = {
     proceedBtn: '✅ Перейти к оформлению',
     chooseCardText:
       `💳 *Выберите тип карты:*\n\n` +
-      `1️⃣ *MaxSwap Online Card* — 52.5 USDT\n` +
-      `Подойдёт для покупок в интернете, подписок, оплаты онлайн-сервисов (Netflix, ChatGPT, Spotify и тд.)\n\n` +
-      `2️⃣ *MaxSwap NFC Card* — 52.5 USDT\n` +
-      `Подойдёт для привязки к Google Pay | Apple Pay и оплаты через NFC-терминалы.\n\n` +
-      `3️⃣ *MaxSwap Ultima* — 99 USDT\n` +
-      `Комбинация двух предыдущих пунктов. Карта подойдёт для любых целей.`,
+      `\`\`\`\n` +
+      `Карта              Цена      \n` +
+      `─────────────────────────────\n` +
+      `💻 Online Card     52.5 USDT \n` +
+      `📱 NFC Card        52.5 USDT \n` +
+      `⭐ Ultima          99   USDT \n` +
+      `\`\`\`\n\n` +
+      `*💻 Online Card* — интернет, подписки, Netflix, ChatGPT, Spotify\n\n` +
+      `*📱 NFC Card* — Google Pay, Apple Pay, NFC-терминалы\n\n` +
+      `*⭐ Ultima* — онлайн + NFC, подходит для любых целей`,
     cardOnlineBtn: '💻 MaxSwap Online Card — 52.5 USDT',
     cardNfcBtn:    '📱 MaxSwap NFC Card — 52.5 USDT',
     cardUltimaBtn: '⭐ MaxSwap Ultima — 99 USDT',
-    cardPaymentCaption:
-      `✅ Для открытия карты отправьте не менее 51,5 USDT по адресу:\n\n` +
+    cardPaymentCaption: (cardName, price) =>
+      `✅ Для открытия карты *${cardName}* отправьте не менее ${price} USDT по адресу:\n\n` +
       `\`TVis1d6QARhWBQ6XZmisD2oSWGnqFM2qzX\`\n\n` +
       `🔐 Это ваш индивидуальный TRC-20 адрес, который доступен для пополнения в любое время.\n\n` +
       `♻️ Средства будут зачислены на баланс автоматически после подтверждения сети.\n\n` +
@@ -104,17 +108,21 @@ const T = {
     proceedBtn: '✅ Proceed to checkout',
     chooseCardText:
       `💳 *Choose your card type:*\n\n` +
-      `1️⃣ *MaxSwap Online Card* — 52.5 USDT\n` +
-      `Perfect for online shopping, subscriptions, and online services (Netflix, ChatGPT, Spotify, etc.)\n\n` +
-      `2️⃣ *MaxSwap NFC Card* — 52.5 USDT\n` +
-      `Perfect for linking to Google Pay | Apple Pay and paying via NFC terminals.\n\n` +
-      `3️⃣ *MaxSwap Ultima* — 99 USDT\n` +
-      `A combination of both previous options. Suitable for any purpose.`,
+      `\`\`\`\n` +
+      `Card               Price     \n` +
+      `─────────────────────────────\n` +
+      `💻 Online Card     52.5 USDT \n` +
+      `📱 NFC Card        52.5 USDT \n` +
+      `⭐ Ultima          99   USDT \n` +
+      `\`\`\`\n\n` +
+      `*💻 Online Card* — online shopping, subscriptions, Netflix, ChatGPT, Spotify\n\n` +
+      `*📱 NFC Card* — Google Pay, Apple Pay, NFC terminals\n\n` +
+      `*⭐ Ultima* — online + NFC, suitable for any purpose`,
     cardOnlineBtn: '💻 MaxSwap Online Card — 52.5 USDT',
     cardNfcBtn:    '📱 MaxSwap NFC Card — 52.5 USDT',
     cardUltimaBtn: '⭐ MaxSwap Ultima — 99 USDT',
-    cardPaymentCaption:
-      `✅ To open the card, send at least 51.5 USDT to:\n\n` +
+    cardPaymentCaption: (cardName, price) =>
+      `✅ To open the *${cardName}* card, send at least ${price} USDT to:\n\n` +
       `\`TVis1d6QARhWBQ6XZmisD2oSWGnqFM2qzX\`\n\n` +
       `🔐 This is your individual TRC-20 address, available for top-up at any time.\n\n` +
       `♻️ Funds will be credited automatically after network confirmation.\n\n` +
@@ -224,14 +232,13 @@ function cardPaymentKeyboard(lang) {
 }
 
 // ─── Отправка шага с оплатой (фото + caption) ─────────────────────────────────
-async function sendCardPayment(chatId, lang, prevMsgId) {
+async function sendCardPayment(chatId, lang, prevMsgId, cardName, price) {
   const t = T[lang];
-  // Удаляем предыдущее сообщение
   if (prevMsgId) {
     try { await bot.deleteMessage(chatId, prevMsgId); } catch(e) {}
   }
   const sent = await bot.sendPhoto(chatId, QR_URL, {
-    caption: t.cardPaymentCaption,
+    caption: t.cardPaymentCaption(cardName, price),
     parse_mode: 'Markdown',
     reply_markup: cardPaymentKeyboard(lang)
   });
@@ -275,7 +282,8 @@ async function handleUpdate(update) {
     }
 
     if (data === 'card_payment') {
-      const newId = await sendCardPayment(userId, lang, msgId);
+      // fallback — открываем с дефолтной картой
+      const newId = await sendCardPayment(userId, lang, msgId, 'MaxSwap Online Card', '52.5');
       if (users[userId]) users[userId].lastMsgId = newId;
       return;
     }
@@ -290,12 +298,13 @@ async function handleUpdate(update) {
 
     if (data === 'card_online' || data === 'card_nfc' || data === 'card_ultima') {
       const cardMap = {
-        card_online: 'MaxSwap Online Card',
-        card_nfc:    'MaxSwap NFC Card',
-        card_ultima: 'MaxSwap Ultima'
+        card_online: { name: 'MaxSwap Online Card', price: '52.5' },
+        card_nfc:    { name: 'MaxSwap NFC Card',    price: '52.5' },
+        card_ultima: { name: 'MaxSwap Ultima',       price: '99'  }
       };
-      if (users[userId]) users[userId].selectedCard = cardMap[data];
-      const newId = await sendCardPayment(userId, lang, msgId);
+      const card = cardMap[data];
+      if (users[userId]) users[userId].selectedCard = card;
+      const newId = await sendCardPayment(userId, lang, msgId, card.name, card.price);
       if (users[userId]) users[userId].lastMsgId = newId;
       return;
     }
