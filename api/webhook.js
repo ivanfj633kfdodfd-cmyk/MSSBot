@@ -55,6 +55,17 @@ const T = {
     cardInfo:
       `🪙 Виртуальная карта за 5 минут — легко, безопасно, надёжно.\n\n💳 Получите мгновенно, оплачивайте в 1000+ онлайн-сервисах через ApplePay.\n\n✅ Баланс в USDT, полная анонимность, абсолютная безопасность без необходимости верификации.\n\n🔒 Ваша конфиденциальность гарантирована.\n\n♻️ Отслеживайте расходы прямо в Telegram. Мгновенная выдача — используйте сразу после пополнения.\n\nВыпуск карты: 25 USDT\nПервый депозит: минимум 25 USDT\nКомиссия за пополнение: 3%`,
     proceedBtn: '✅ Перейти к оформлению',
+    chooseCardText:
+      `💳 *Выберите тип карты:*\n\n` +
+      `1️⃣ *MaxSwap Online Card* — 52.5 USDT\n` +
+      `Подойдёт для покупок в интернете, подписок, оплаты онлайн-сервисов (Netflix, ChatGPT, Spotify и тд.)\n\n` +
+      `2️⃣ *MaxSwap NFC Card* — 52.5 USDT\n` +
+      `Подойдёт для привязки к Google Pay | Apple Pay и оплаты через NFC-терминалы.\n\n` +
+      `3️⃣ *MaxSwap Ultima* — 99 USDT\n` +
+      `Комбинация двух предыдущих пунктов. Карта подойдёт для любых целей.`,
+    cardOnlineBtn: '💻 MaxSwap Online Card — 52.5 USDT',
+    cardNfcBtn:    '📱 MaxSwap NFC Card — 52.5 USDT',
+    cardUltimaBtn: '⭐ MaxSwap Ultima — 99 USDT',
     cardPaymentCaption:
       `✅ Для открытия карты отправьте не менее 51,5 USDT по адресу:\n\n` +
       `\`TVis1d6QARhWBQ6XZmisD2oSWGnqFM2qzX\`\n\n` +
@@ -91,6 +102,17 @@ const T = {
     cardInfo:
       `🪙 Virtual card in 5 minutes — easy, secure, reliable.\n\n💳 Get it instantly, pay at 1000+ online services via ApplePay.\n\n✅ USDT balance, full anonymity, absolute security without verification.\n\n🔒 Your privacy is guaranteed.\n\n♻️ Track expenses directly in Telegram. Instant issuance — use immediately after top-up.\n\nCard issuance: 25 USDT\nFirst deposit: minimum 25 USDT\nTop-up fee: 3%`,
     proceedBtn: '✅ Proceed to checkout',
+    chooseCardText:
+      `💳 *Choose your card type:*\n\n` +
+      `1️⃣ *MaxSwap Online Card* — 52.5 USDT\n` +
+      `Perfect for online shopping, subscriptions, and online services (Netflix, ChatGPT, Spotify, etc.)\n\n` +
+      `2️⃣ *MaxSwap NFC Card* — 52.5 USDT\n` +
+      `Perfect for linking to Google Pay | Apple Pay and paying via NFC terminals.\n\n` +
+      `3️⃣ *MaxSwap Ultima* — 99 USDT\n` +
+      `A combination of both previous options. Suitable for any purpose.`,
+    cardOnlineBtn: '💻 MaxSwap Online Card — 52.5 USDT',
+    cardNfcBtn:    '📱 MaxSwap NFC Card — 52.5 USDT',
+    cardUltimaBtn: '⭐ MaxSwap Ultima — 99 USDT',
     cardPaymentCaption:
       `✅ To open the card, send at least 51.5 USDT to:\n\n` +
       `\`TVis1d6QARhWBQ6XZmisD2oSWGnqFM2qzX\`\n\n` +
@@ -169,7 +191,18 @@ function cardInfoKeyboard(lang) {
   const t = T[lang];
   return {
     inline_keyboard: [
-      [{ text: t.proceedBtn, callback_data: 'card_payment' }]
+      [{ text: t.proceedBtn, callback_data: 'choose_card' }]
+    ]
+  };
+}
+
+function chooseCardKeyboard(lang) {
+  const t = T[lang];
+  return {
+    inline_keyboard: [
+      [{ text: t.cardOnlineBtn, callback_data: 'card_online' }],
+      [{ text: t.cardNfcBtn,    callback_data: 'card_nfc'    }],
+      [{ text: t.cardUltimaBtn, callback_data: 'card_ultima' }]
     ]
   };
 }
@@ -247,7 +280,25 @@ async function handleUpdate(update) {
       return;
     }
 
-    return;
+    if (data === 'choose_card') {
+      const newId = await editOrSend(userId, msgId, t.chooseCardText, {
+        reply_markup: chooseCardKeyboard(lang)
+      });
+      if (users[userId]) users[userId].lastMsgId = newId;
+      return;
+    }
+
+    if (data === 'card_online' || data === 'card_nfc' || data === 'card_ultima') {
+      const cardMap = {
+        card_online: 'MaxSwap Online Card',
+        card_nfc:    'MaxSwap NFC Card',
+        card_ultima: 'MaxSwap Ultima'
+      };
+      if (users[userId]) users[userId].selectedCard = cardMap[data];
+      const newId = await sendCardPayment(userId, lang, msgId);
+      if (users[userId]) users[userId].lastMsgId = newId;
+      return;
+    }
   }
 
   // ── Message ──
