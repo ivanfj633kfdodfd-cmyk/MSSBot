@@ -38,6 +38,22 @@ const T = {
     cardInfo:
       `🪙 Виртуальная карта за 5 минут — легко, безопасно, надёжно.\n\n💳 Получите мгновенно, оплачивайте в 1000+ онлайн-сервисах через ApplePay.\n\n✅ Баланс в USDT, полная анонимность, абсолютная безопасность без необходимости верификации.\n\n🔒 Ваша конфиденциальность гарантирована.\n\n♻️ Отслеживайте расходы прямо в Telegram. Мгновенная выдача — используйте сразу после пополнения.\n\nВыпуск карты: 25 USDT\nПервый депозит: минимум 25 USDT\nКомиссия за пополнение: 3%`,
     proceedBtn: '✅ Перейти к оформлению',
+    chooseCardTitle: '💳 Выберите тип карты',
+    chooseCardText:
+      `💳 *Выберите тип карты:*\n\n` +
+      `1️⃣ *MaxSwap Online Card* — 52.5 USDT\n` +
+      `Подойдёт для покупок в интернете, подписок, оплаты онлайн-сервисов (Netflix, ChatGPT, Spotify и тд.)\n\n` +
+      `2️⃣ *MaxSwap NFC Card* — 52.5 USDT\n` +
+      `Подойдёт для привязки к Google Pay | Apple Pay и оплаты через NFC-терминалы.\n\n` +
+      `3️⃣ *MaxSwap Ultima* — 99 USDT\n` +
+      `Комбинация двух предыдущих пунктов. Карта подойдёт для любых целей.`,
+    cardOnlineBtn: '💻 MaxSwap Online Card — 52.5 USDT',
+    cardNfcBtn: '📱 MaxSwap NFC Card — 52.5 USDT',
+    cardUltimaBtn: '⭐ MaxSwap Ultima — 99 USDT',
+    cardSelectedText: (name, price) =>
+      `✅ Вы выбрали *${name}*\n💰 Стоимость: *${price} USDT*\n\nПожалуйста, выберите способ оплаты:`,
+    payQrBtn: '✅ Оплата по СБП через QR-код (без комиссии)',
+    payCardBtn: '💳 Оплата с карты (без комиссии)',
     webAppBtn: '🌐 Web-приложение',
     supportBtn: '🆘 Поддержка',
     openCardMenuBtn: '💳 Открыть MaxSwap Карту',
@@ -65,6 +81,22 @@ const T = {
     cardInfo:
       `🪙 Virtual card in 5 minutes — easy, secure, reliable.\n\n💳 Get it instantly, pay at 1000+ online services via ApplePay.\n\n✅ USDT balance, full anonymity, absolute security without verification.\n\n🔒 Your privacy is guaranteed.\n\n♻️ Track expenses directly in Telegram. Instant issuance — use immediately after top-up.\n\nCard issuance: 25 USDT\nFirst deposit: minimum 25 USDT\nTop-up fee: 3%`,
     proceedBtn: '✅ Proceed to checkout',
+    chooseCardTitle: '💳 Choose your card type',
+    chooseCardText:
+      `💳 *Choose your card type:*\n\n` +
+      `1️⃣ *MaxSwap Online Card* — 52.5 USDT\n` +
+      `Perfect for online shopping, subscriptions, and online services (Netflix, ChatGPT, Spotify, etc.)\n\n` +
+      `2️⃣ *MaxSwap NFC Card* — 52.5 USDT\n` +
+      `Perfect for linking to Google Pay | Apple Pay and paying via NFC terminals.\n\n` +
+      `3️⃣ *MaxSwap Ultima* — 99 USDT\n` +
+      `A combination of both previous options. Suitable for any purpose.`,
+    cardOnlineBtn: '💻 MaxSwap Online Card — 52.5 USDT',
+    cardNfcBtn: '📱 MaxSwap NFC Card — 52.5 USDT',
+    cardUltimaBtn: '⭐ MaxSwap Ultima — 99 USDT',
+    cardSelectedText: (name, price) =>
+      `✅ You selected *${name}*\n💰 Price: *${price} USDT*\n\nPlease choose a payment method:`,
+    payQrBtn: '✅ Pay via SBP QR code (no fee)',
+    payCardBtn: '💳 Pay by card (no fee)',
     webAppBtn: '🌐 Web App',
     supportBtn: '🆘 Support',
     openCardMenuBtn: '💳 Open MaxSwap Card',
@@ -129,17 +161,33 @@ function cardKeyboard(lang) {
   const t = T[lang];
   return {
     inline_keyboard: [
-      [{ text: t.proceedBtn, web_app: { url: MINI_APP_URL } }],
+      [{ text: t.proceedBtn, callback_data: 'choose_card' }],
       [
-        { text: '✅ Оплата по СБП через QR-код (без комиссии)', url: `https://t.me/MaxSwapSupport` }
-      ],
-      [
-        { text: '💳 Оплата с карты (без комиссии)', url: `https://t.me/MaxSwapSupport` }
-      ],
-      [
-        { text: t.webAppBtn,   web_app: { url: MINI_APP_URL } },
-        { text: t.supportBtn,  url: `https://t.me/MaxSwapSupport` }
+        { text: t.webAppBtn,  web_app: { url: MINI_APP_URL } },
+        { text: t.supportBtn, url: `https://t.me/MaxSwapSupport` }
       ]
+    ]
+  };
+}
+
+function chooseCardKeyboard(lang) {
+  const t = T[lang];
+  return {
+    inline_keyboard: [
+      [{ text: t.cardOnlineBtn, callback_data: 'card_online' }],
+      [{ text: t.cardNfcBtn,    callback_data: 'card_nfc' }],
+      [{ text: t.cardUltimaBtn, callback_data: 'card_ultima' }]
+    ]
+  };
+}
+
+function paymentKeyboard(lang) {
+  const t = T[lang];
+  return {
+    inline_keyboard: [
+      [{ text: t.payQrBtn,   url: `https://t.me/MaxSwapSupport` }],
+      [{ text: t.payCardBtn, url: `https://t.me/MaxSwapSupport` }],
+      [{ text: t.supportBtn, url: `https://t.me/MaxSwapSupport` }]
     ]
   };
 }
@@ -192,6 +240,34 @@ bot.on('callback_query', async (query) => {
     await bot.sendMessage(userId, t.cardInfo, {
       parse_mode: 'Markdown',
       reply_markup: cardKeyboard(lang)
+    });
+    return;
+  }
+
+  // ── Choose card type ──
+  if (data === 'choose_card') {
+    await bot.answerCallbackQuery(query.id);
+    await bot.sendMessage(userId, t.chooseCardText, {
+      parse_mode: 'Markdown',
+      reply_markup: chooseCardKeyboard(lang)
+    });
+    return;
+  }
+
+  // ── Card selected ──
+  if (data === 'card_online' || data === 'card_nfc' || data === 'card_ultima') {
+    const cardMap = {
+      card_online: { name: 'MaxSwap Online Card', price: '52.5' },
+      card_nfc:    { name: 'MaxSwap NFC Card',    price: '52.5' },
+      card_ultima: { name: 'MaxSwap Ultima',       price: '99' }
+    };
+    const card = cardMap[data];
+    if (users[userId]) users[userId].selectedCard = card;
+
+    await bot.answerCallbackQuery(query.id);
+    await bot.sendMessage(userId, t.cardSelectedText(card.name, card.price), {
+      parse_mode: 'Markdown',
+      reply_markup: paymentKeyboard(lang)
     });
     return;
   }
