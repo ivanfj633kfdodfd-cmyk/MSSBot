@@ -16,10 +16,6 @@ function formatDate(date) {
   });
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 async function editOrSend(chatId, msgId, text, opts = {}) {
   const parseMode = opts.parse_mode || 'Markdown';
   try {
@@ -39,7 +35,6 @@ async function editOrSend(chatId, msgId, text, opts = {}) {
 // ─── Texts ────────────────────────────────────────────────────────────────────
 const T = {
   ru: {
-    chooseLanguage: '🌐 Выберите язык интерфейса:',
     profile: (id, date) =>
       `<h2>👤 Профиль</h2>` +
       `<hr/>` +
@@ -96,7 +91,6 @@ const T = {
     infoBtn: '📄 Инфо',
   },
   en: {
-    chooseLanguage: '🌐 Choose your interface language:',
     profile: (id, date) =>
       `<h2>👤 Profile</h2>` +
       `<hr/>` +
@@ -155,18 +149,6 @@ const T = {
 };
 
 // ─── Keyboards ────────────────────────────────────────────────────────────────
-// Telegram поддерживает цвета кнопок только через web_app и url.
-// Для callback кнопок цвет задаётся эмодзи в тексте.
-// Зелёный = ✅, Синий = 🌐, Красный = 🆘
-
-function langKeyboard() {
-  return {
-    inline_keyboard: [[
-      { text: '🇷🇺 Русский', callback_data: 'lang_ru' },
-      { text: '🇬🇧 English', callback_data: 'lang_en' }
-    ]]
-  };
-}
 
 function profileKeyboard(lang) {
   const t = T[lang];
@@ -269,23 +251,6 @@ async function handleUpdate(update) {
 
     await bot.answerCallbackQuery(query.id);
 
-    if (data === 'lang_ru' || data === 'lang_en') {
-      const chosen = data === 'lang_ru' ? 'ru' : 'en';
-      if (!users[userId]) users[userId] = { registeredAt: Date.now() };
-      users[userId].lang = chosen;
-      users[userId].step = 'done';
-
-      const regDate = formatDate(users[userId].registeredAt);
-      const tChosen = T[chosen];
-      try { await bot.deleteMessage(userId, msgId); } catch(e) {}
-      const sent = await bot.sendRichMessage(userId, {
-        rich_message: { html: tChosen.profile(userId, regDate) },
-        reply_markup: profileKeyboard(chosen)
-      });
-      users[userId].lastMsgId = sent.message_id;
-      return;
-    }
-
     if (data === 'locked') {
       await editOrSend(userId, msgId, t.needCard, { reply_markup: needCardKeyboard(lang) });
       return;
@@ -334,24 +299,14 @@ async function handleUpdate(update) {
     const text   = msg.text || '';
 
     if (text === '/start') {
-      const existing = users[userId];
-      if (existing && existing.step === 'done') {
-        try { await bot.deleteMessage(userId, msg.message_id); } catch(e) {}
-        const regDate = formatDate(existing.registeredAt);
-        const lang = existing.lang || 'ru';
-        const t = T[lang];
-        const sent = await bot.sendRichMessage(userId, {
-          rich_message: { html: t.profile(userId, regDate) },
-          reply_markup: profileKeyboard(lang)
-        });
-        users[userId].lastMsgId = sent.message_id;
-        return;
-      }
-
-      // Новый пользователь — выбор языка
-      users[userId] = { step: 'choose_lang', lang: null, registeredAt: Date.now() };
       try { await bot.deleteMessage(userId, msg.message_id); } catch(e) {}
-      const sent = await bot.sendMessage(userId, T.ru.chooseLanguage, { reply_markup: langKeyboard() });
+      if (!users[userId]) users[userId] = { registeredAt: Date.now() };
+      const lang = users[userId].lang || 'ru';
+      const regDate = formatDate(users[userId].registeredAt);
+      const sent = await bot.sendRichMessage(userId, {
+        rich_message: { html: T[lang].profile(userId, regDate) },
+        reply_markup: profileKeyboard(lang)
+      });
       users[userId].lastMsgId = sent.message_id;
       return;
     }
